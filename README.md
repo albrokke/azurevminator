@@ -8,3 +8,5 @@ To address these challenges the AzureVMinator was created to help organiations e
 4. Deploy new Data Science VMs based on a pre-determined list of sizes
 5. Connect to the Azure VMs from a list provided via SSH fromt he Jump box
 6. Delete an Azure VM that was deployed by the same user
+
+Note that for customization purposes and security from the initial implementation there are a number of places in the shell script where you will need to replace <<variable name>> with your own Azure resource names.
