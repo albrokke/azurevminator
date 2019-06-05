@@ -1,13 +1,15 @@
 #!/bin/bash
-function menu {
-   clear
-   echo "**********************************************************"
-   echo "*                                                        *"
-   echo "*                Data Science VMinator v1.0              *"
-   echo "*                                                        *"
-   echo "**********************************************************"
-   echo
+# The Azure VMinator is a set of BASH shell scripts that leverage the AZURE CLI to help simplify Azure deployment for VMs.
+# The code is deisgned to be run from a jump server in a protected vNet as described in the visio in the repository
 
+function menu {
+#menu display
+clear
+   echo "**********************************************************"
+   echo "*                                                        *"
+   echo "*                Azure VMinator v1.0              *"
+   echo "*                                                        *"
+   echo "**********************************************************"
    echo
    echo "  Enter a to authenticate to Azure"
    echo "  Enter l to list your team's VMs"
@@ -25,7 +27,9 @@ function menu {
                echo
                echo "    Here are Your team's deployed VMs:"
                echo
-               az vm list -g walledgarden -o table
+
+               #retrieves the list of VMs from your resource group using the Azure CLI
+               az vm list -g <<your resource group>> -o table
                echo "    Press [Enter] to continue"
                read CONTINUE
                menu
@@ -50,17 +54,28 @@ function auth {
 }
 
 function deploy {
+    #Generates the VM name based on the logged on user's name and the epoch time representation of the time to ensure uniqueness
     VMNAME="$USER$(date +%s)"
-    RGNAME='walledgarden'
+    
+    #enter the resource group all of these resources will be deployed to
+    RGNAME=<<your resource group>>
+    
+    #Azure location to deploy code
     LOCATION='northcentralus'  # e.g. westus2
+    
+    #The following items are based on the Ubuntu Data Science VM.  If you wanted a different offering you have to look those variables up
     PUB='microsoft-ads'
     OFFER='linux-data-science-vm-ubuntu'
     SKU='linuxdsvmubuntu'
     VERSION='latest'
-    VNET='walledgarden'
-    SUBNET='resources'
- 
+    #The name of the VNET you want to deploy to
+    VNET=<<Your VNET>>
+    #Based on the topology in the visio this is the protected VNET for deploying the Data Science VMs
+    SUBNET=<<Protected Subnet>>
     echo
+ 
+    #Customize this as you see fit.  The numbers and sizes here were based on availability in North Central US at the time of the
+    # code being written and based on recommended sizes for Data Science VMs.
     echo "   Enter the number of the virtual machine size you would like to deploy "
     echo "     ________________________________________________________________"
     echo "    |Choice   |Size   |CPU    |GPU    |RAM    |Estimated Monthly Cost|"
@@ -71,6 +86,9 @@ function deploy {
     echo "    |5                |NC12   |12     |2      |112GB  |$ 1582.64"
     echo ""
     read CONFIG
+    
+    #The following Case Statement provides variable values based on the sizes being requested. If you change the table 
+    # above you'll have to change the SIZE in the case statemen
     case $CONFIG in
         1)
                  SIZE='Standard_DS2_v2'
@@ -92,7 +110,8 @@ function deploy {
   echo
   echo "    Creating Azure VM deployment.  This can take up to 5 minutes, please wait..."
   echo
-
+  
+  # Leverages all of the values above to define Azure VM for deployment
   az vm create \
     --name $VMNAME --resource-group $RGNAME --image $PUB\:$OFFER\:$SKU\:$VERSION \
     --plan-name $SKU --plan-product $OFFER --plan-publisher $PUB \
@@ -103,12 +122,15 @@ function deploy {
     --public-ip-address ""
 
   echo
+  
+  #This is just here to see the output before the screen clears
   sleep 5
   menu
 }
 
 function remove {
-    RGNAME='walledgarden'
+#Enter the REsource Group you want to use
+    RGNAME=<<Your Resource Group>>
     declare -a DVMS
     declare -a RESOURCES
     declare -i dcounter
@@ -116,6 +138,8 @@ function remove {
     delimiter="\""
     dcounter=0
     counter=0
+  
+    #Retrieves the list of VMs in a format to be able to create a choice list for the user
     DVMS=($(az vm list --resource-group $RGNAME --query "[].{name:name}" -o table | tr '\n' ' '))
     for DVM in "${DVMS[@]}"i
         do
@@ -129,8 +153,14 @@ function remove {
     echo
     echo "    Submitting VM deletion to Azure this can take up to 5 minutes."
     echo "az vm delete --resource-group $RGNAME --name ${DVMS[$DNUM]} --yes"
+    
+    #Deletes the VM resource from Azure
     az vm delete --resource-group $RGNAME --name ${DVMS[$DNUM]} --yes
+    
+    #Finds all of the resources that were associated with the VM Resources
     RESOURCES=($(az resource list -g walledgarden --query "[].{Name:name,Type:type}" -o table))
+    
+    #Iteratively deletes all of the resources that were associated with the VM resource
     for RESOURCE in "${RESOURCES[@]}"
         do
             counter=`expr $counter + 1`
@@ -150,6 +180,8 @@ function connect {
     declare -i ACCESS
     delimiter="\""
     counter=0
+    
+    #Retrieves VMs in the resource group
     VMS=($(az vm list --resource-group $RGNAME --query "[].{name:name}" -o table | tr '\n' ' ' ))
     for VM in "${VMS[@]}"
         do
@@ -162,8 +194,12 @@ function connect {
     echo
 
     read ACCESS
+    
+    #Reads the network adapter configuration to find the IP Address to connect to
     NIC="${VMS[$ACCESS]}VMNic"
     IPDATA="$(az vm nic show --resource-group $RGNAME --vm-name ${VMS[$ACCESS]} --nic $NIC | grep "privateIpAddress\":" | tr '\"privateIpAddress\":\"' ' ' | tr '\",' ' ')"
+    
+    #Connects to the VM via SSH
     ssh $IPDATA
     menu
 }
