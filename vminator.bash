@@ -176,6 +176,7 @@ function connect {
     NIC="${VMS[$ACCESS]}VMNic"
     IPDATA="$(az vm nic show --resource-group $RGNAME --vm-name ${VMS[$ACCESS]} --nic $NIC | grep "privateIpAddress\":" | tr '\"privateIpAddress\":\"' ' ' | tr '\",' ' ')"
     ssh $IPDATA
+    sleep 10
     menu
 }
 
