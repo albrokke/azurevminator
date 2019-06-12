@@ -94,7 +94,7 @@ function deploy {
   echo "    Creating Azure VM deployment.  This can take up to 5 minutes, please wait..."
   echo
 
-EXPIRE=$(date +%s)+TTL 
+EXPIRE=`expr $(date +%s)+$TTL` 
 
   az vm create \
     --name $VMNAME --resource-group $RGNAME --image $PUB\:$OFFER\:$SKU\:$VERSION \
