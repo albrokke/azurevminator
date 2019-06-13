@@ -104,7 +104,7 @@ EXPIRE=`expr $CURRENTTIME+$TTL`
     --admin-username $USER \
     --generate-ssh-keys \
     --vnet-name $VNET \
-    --size $SIZE
+    --size $SIZE \
     --subnet $SUBNET \
     --public-ip-address "" \
     --tags owner=$USER expire=$EXPIRE \
