@@ -93,10 +93,7 @@ function deploy {
   echo 
   echo "    Creating Azure VM deployment.  This can take up to 5 minutes, please wait..."
   echo
-declare -i CURRENTTIME
-CURRENTTIME=$(date +%s)
-
-EXPIRE=`expr $CURRENTTIME+$TTL` 
+BUILD=$(date +%s)
 
   az vm create \
     --name $VMNAME --resource-group $RGNAME --image $PUB\:$OFFER\:$SKU\:$VERSION \
@@ -107,7 +104,7 @@ EXPIRE=`expr $CURRENTTIME+$TTL`
     --size $SIZE \
     --subnet $SUBNET \
     --public-ip-address "" \
-    --tags owner=$USER expire=$EXPIRE \
+    --tags owner=$USER build=$BUILD team=$TEAM \
     --output table 
 
   echo "    Encrypting the VM.  This can take up to 5 minutes "
