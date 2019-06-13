@@ -111,11 +111,27 @@ EXPIRE=`expr $CURRENTTIME+$TTL`
     --output table 
 
   echo "    Encrypting the VM.  This can take up to 5 minutes "
-  sleep 60
   az vm encryption enable --resource-group $RGNAME --name $VMNAME --disk-encryption-keyvault $RGNAME --volume-type All
   
-  read ADVANCE
-  echo "    Press [Enter] to continue  "
+  az vm extension set \
+    --publisher Microsoft.Azure.ActiveDirectory.LinuxSSH \
+    --name AADLoginForLinux \
+    --resource-group $RGNAME \
+    --vm-name $VMNAME
+
+sleep 10
+
+    echo " Adding AAD Login as an Administrator "
+azusername=$(az account show --query user.name --output tsv)
+azvm=$(az vm show --resource-group $RGNAME --name $VMNAME --query id -o tsv)
+
+az role assignment create \
+    --role "Virtual Machine Administrator Login" \
+    --assignee $azusername \
+    --scope $azvm
+
+sleep 10
+
   echo "     Verifying successful encryption "
   az vm encryption show -g $RGNAME -n $VMNAME -o table
   sleep 20
@@ -176,9 +192,10 @@ function connect {
     
     read ACCESS
     az vm start -g $RGNAME -n ${VMS[$ACCESS]} -o table
+    azusername=$(az account show --query user.name --output tsv)
     NIC="${VMS[$ACCESS]}VMNic"
     IPDATA="$(az vm nic show --resource-group $RGNAME --vm-name ${VMS[$ACCESS]} --nic $NIC | grep "privateIpAddress\":" | tr '\"privateIpAddress\":\"' ' ' | tr '\",' ' ')"
-    ssh $IPDATA
+    ssh -l $azusername $IPDATA
     sleep 10
     menu
 }
