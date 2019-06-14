@@ -30,9 +30,9 @@ apt-get install blobfuse
 mkdir $FUSEDIR
 
 #mounts the containers within the Azure storage as mount points in the file system
-mountcontainer ($INBOXTEMP,$INBOXCONFIG,$INBOXCONTAINER)
-mountcontainer ($OUTBOXTEMP,$OUTBOXCONFIG,$OUTBOXCONTAINER)
-mountcontainer ($SOURCETEMP,$SOURCECONFIG,$SOURCECONTAINER)
+mountcontainer $INBOXTEMP $INBOXCONFIG $INBOXCONTAINER
+mountcontainer $OUTBOXTEMP $OUTBOXCONFIG $OUTBOXCONTAINER
+mountcontainer $SOURCETEMP $SOURCECONFIG $SOURCECONTAINER
 
 
 
