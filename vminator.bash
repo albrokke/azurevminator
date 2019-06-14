@@ -12,8 +12,10 @@ function menu {
    echo "  Enter a to authenticate to Azure"
    echo "  Enter l to list your team's VMs"
    echo "  Enter d to deploy a new VM"
-   echo "  Enter r to remove an existing VM"
    echo "  Enter c to connect a VM"
+   echo "  Enter s to shutdown an existing VM"
+   echo "  Enter b to block autoshutdown for 24 hours"
+   echo "  Enter r to remove an existing VM"
    echo "  Enter e to exit"
    read ACTION
    case $ACTION in
@@ -34,11 +36,17 @@ function menu {
        d)
 	     deploy
         ;;
-       r)
-             remove
-        ;;
        c)
  	     connect
+        ;;
+       s)
+          shutdown
+        ;;
+       b)
+          block
+        ;;
+       r)
+          remove
         ;;
        e)
 	     exit
@@ -136,6 +144,7 @@ sleep 10
 }
 
 function remove {
+    
     declare -a DVMS
     declare -a RESOURCES
     declare -i dcounter
@@ -196,6 +205,32 @@ function connect {
     sleep 10
     menu
 }
+
+function remove {
+    declare -a DVMS
+    declare -a RESOURCES
+    declare -i dcounter
+    declare -i DELETEVM
+    delimiter="\""
+    dcounter=0
+    counter=0
+    DVMS=($(az vm list --resource-group $RGNAME --query "[].{name:name}" -o table | tr '\n' ' ')) 
+    for DVM in "${DVMS[@]}"i
+        do
+            echo "$dcounter : $DVM"
+            dcounter=`expr $dcounter + 1`
+        done
+    echo
+    echo "    Enter the number of the VM you would like to delete" 
+    echo
+    read DNUM
+    echo 
+    echo "    Shutting down VM gracefully"
+    echo "az vm shutdown --resource-group $RGNAME --name ${DVMS[$DNUM]} --yes"
+    az vm shutdown --resource-group $RGNAME --name ${DVMS[$DNUM]} --yes
+    menu
+}
+
 
 source vminator.config 
 menu

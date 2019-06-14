@@ -1,36 +1,40 @@
 #!/bin/bash
+mountcontainer() 
+{
+    #makes a temporary storage point in the Azure VM temp space for the fuse adapter for the incoming and outgoing containers
+    mkdir $1
+    chown $USER $1
 
+    #writes the config files for the fuse blob adapter based on the storage account properties for the incoming container
+    echo "accountName $AZSTORAGE" >> $2
+    echo "accountKey $AZACCOUNTKEY" >> $2
+    echo "containerName $3" >> $2
+
+    #sets permissions to prevent users from reading the storage access key
+    chown $USER $2
+    chmod 600 $2
+
+    # creates the directories for the fuse mount points
+    mkdir "$FUSEDIR/$3"
+
+    #mounts blob storage
+    blobfuse "$FUSEDIR/$3" --tmp-path=$1  --config-file=$2 -o attr_timeout=240 -o entry_timeout=240 -o negative_timeout=120 -o allow_other
+
+}
+
+source blobmount.config
 #installs the blobfuse adapter for accessing Azure Blob Storage as a part of the file system
 apt-get install blobfuse
 
-#makes a temporary storage point in the Azure VM temp space for the fuse adapter for the incoming and outgoing containers
-mkdir /mnt/resource/fusetmpincoming -p
-mkdir /mnt/resource/fusetmpoutgoing -p
+#makes a base directory for all fuse mount points
+mkdir $FUSEDIR
 
-#sets ownership on the temp space
-chown $USER /mnt/resource/fusetmpincoming
-chown $USER /mnt/resource/fusetmpoutgoing
+#mounts the containers within the Azure storage as mount points in the file system
+mountcontainer ($INBOXTEMP,$INBOXCONFIG,$INBOXCONTAINER)
+mountcontainer ($OUTBOXTEMP,$OUTBOXCONFIG,$OUTBOXCONTAINER)
+mountcontainer ($SOURCETEMP,$SOURCECONFIG,$SOURCECONTAINER)
 
-#writes the config files for the fuse blob adapter based on the storage account properties for the incoming container
-echo "accountName <<AzureStorageAccountName>>" >> ~/fuse_incoming.cfg
-echo "accountKey <<Azure Storage Key>> >> ~/fuse_incoming.cfg
-echo "containerName incoming" >> ~/fuse_incoming.cfg
 
-#writes the config files for the fuse blob adapter based on the storage account properties for the outgoing container
-echo "accountName <<AzureStorageAccountName>>" >> ~/fuse_outgoing.cfg
-echo "accountKey <<Azure Storage Key>>" >> ~/fuse_outgoing.cfg
-echo "containerName outgoing" >> ~/fuse_outgoing.cfg
 
-#sets permisions to prevent users from reading the storage access key
-chown $USER ~/fuse_incoming.cfg
-chown $USER ~/fuse_outgoing.cfg
-chmod 600 ~/fuse_incoming.cfg
-chmod 600 ~/fuse_outgoing.cfg
 
-# creates the directories for the fuse mount points
-mkdir ~/incoming
-mkdir ~/outgoing
 
-#mounts blob storage
-blobfuse ~/incoming --tmp-path=/mnt/resource/fusetmpincoming  --config-file=../fuse_incoming.cfg -o attr_timeout=240 -o entry_timeout=240 -o negative_timeout=120 -o allow_other
-blobfuse ~/outgoing --tmp-path=/mnt/resource/fusetmpoutgoing  --config-file=../fuse_outgoing.cfg -o attr_timeout=240 -o entry_timeout=240 -o negative_timeout=120 -o allow_other
