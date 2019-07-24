@@ -32,7 +32,7 @@ mountcontainer()
     rm $2
 }
 
-source blobmount.config
+source /fuse/blobmount.config
 #installs the blobfuse adapter for accessing Azure Blob Storage as a part of the file system
 apt-get install blobfuse
 
