@@ -1,0 +1,3 @@
+#!/bin/sh -e
+/fuse/blobmount.bash
+exit 0
